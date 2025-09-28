@@ -8,138 +8,8 @@
 - [InterNACHI/modular](https://github.com/InterNACHI/modular) - Original package by InterNACHI
 - [MyANApro/modular](https://github.com/MyANApro/modular) - Enhanced fork
 
-This package extends the original InterNACHI/modular with additional features and improvements, including enhanced support for wikimedia/composer-merge-plugin for better module autoloading.
+This package extends the original `InterNACHI/modular` with additional features and improvements, including enhanced support for `wikimedia/composer-merge-plugin` for better module autoloading.
 
-## How This Enhanced Version Differs
-
-### Original InterNACHI Approach vs Enhanced Approach
-
-#### Original InterNACHI/modular Workflow:
-
-```mermaid
-graph TD
-    A[Create Module: example] --> B[Manual composer.json Updates]
-    B --> C[Add Path Repository]
-    B --> D[Add Module Requirement]
-    C --> E[composer update example-module]
-    D --> E
-    E --> F[Module Available]
-
-    style B fill:#ffcccc
-    style E fill:#ffffcc
-```
-
-**Steps Required:**
-1. `php artisan make:module example`
-2. **Manual** composer.json modification (adds path repository)
-3. **Manual** composer.json modification (adds module requirement)
-4. `composer update example-module`
-
-#### Enhanced Approach with wikimedia/composer-merge-plugin:
-
-```mermaid
-graph TD
-    A[Create Module: example] --> B[Auto-Discovery via Merge Plugin]
-    B --> C[Automatic Autoloading]
-    C --> D[Module Immediately Available]
-
-    style B fill:#ccffcc
-    style C fill:#ccffcc
-    style D fill:#ccffcc
-```
-
-**Steps Required:**
-1. `php artisan make:module example`
-2. **Automatic** - No manual composer.json updates needed!
-
-### Detailed Comparison
-
-#### Traditional Approach - Module Creation Impact:
-
-```mermaid
-sequenceDiagram
-    participant Dev as Developer
-    participant CLI as Artisan CLI
-    participant Main as Main composer.json
-    participant Module as Module composer.json
-    participant Composer as Composer
-
-    Dev->>CLI: php artisan make:module example
-    CLI->>Module: Create app-modules/example/composer.json
-    CLI->>Main: Add path repository
-    CLI->>Main: Add module requirement
-    Note over Main: Manual composer.json updates
-    Dev->>Composer: composer update example-module
-    Composer->>Dev: Module ready to use
-```
-
-#### Enhanced Approach - Module Creation Impact:
-
-```mermaid
-sequenceDiagram
-    participant Dev as Developer
-    participant CLI as Artisan CLI
-    participant Module as Module composer.json
-    participant Plugin as Merge Plugin
-    participant Composer as Composer
-
-    Dev->>CLI: php artisan make:module example
-    CLI->>Module: Create app-modules/example/composer.json
-    Plugin->>Module: Auto-discover composer.json
-    Plugin->>Composer: Merge autoload configurations
-    Note over Plugin: Automatic integration
-    Composer->>Dev: Module immediately available
-```
-
-### File Structure Comparison
-
-#### What gets created with `php artisan make:module example`:
-
-```mermaid
-graph TD
-    subgraph "Original Approach"
-        A1[app-modules/example/composer.json]
-        A2[Main composer.json - Updated]
-        A3[Manual composer update required]
-    end
-
-    subgraph "Enhanced Approach"
-        B1[app-modules/example/composer.json]
-        B2[Main composer.json - Unchanged]
-        B3[Auto-discovery via merge plugin]
-    end
-
-    style A2 fill:#ffcccc
-    style A3 fill:#ffcccc
-    style B2 fill:#ccffcc
-    style B3 fill:#ccffcc
-```
-
-### Key Advantages of Enhanced Approach:
-
-1. **🚀 Zero Manual Configuration**: No need to manually update main composer.json
-2. **⚡ Instant Availability**: Modules are immediately available after creation
-3. **🧹 Cleaner Main composer.json**: Keeps main file focused on actual dependencies
-4. **🔄 Simplified Workflow**: One command creates a fully functional module
-5. **📦 Better Separation**: Module dependencies are self-contained
-
-### Configuration Example
-
-The enhanced approach uses this configuration in your main `composer.json`:
-
-```json
-{
-    "extra": {
-        "merge-plugin": {
-            "include": [
-                "app-modules/*/composer.json"
-            ]
-        }
-    }
-}
-```
-
-This tells the merge plugin to automatically include and merge all composer.json files from any module in the `app-modules/` directory, eliminating the need for manual composer.json updates when creating new modules.
 
 ## Quick Setup for Development
 
@@ -220,6 +90,98 @@ This enables automatic discovery and autoloading of modules using the wikimedia/
 php artisan clear
 composer dump-autoload
 ```
+
+## Enhanced vs Original Approach
+
+This package offers two approaches for module autoloading. Choose the one that best fits your workflow:
+
+### 🚀 Enhanced Approach (Recommended)
+
+**Key Advantages:**
+1. **Zero Manual Configuration**: No need to manually update main composer.json for new modules after initial setup
+2. **⚡ Instant Availability**: Modules are immediately available after creation
+3. **🧹 Cleaner Main composer.json**: Keeps main file focused on actual dependencies
+4. **🔄 Simplified Workflow**: One command creates a fully functional module
+5. **📦 Better Separation**: Module dependencies are self-contained
+
+**Setup Requirements:**
+```bash
+# Enable the merge plugin
+composer config allow-plugins.wikimedia/composer-merge-plugin true
+```
+
+**Main composer.json configuration:**
+```json
+{
+    "extra": {
+        "merge-plugin": {
+            "include": [
+                "app-modules/*/composer.json"
+            ]
+        }
+    }
+}
+```
+
+**Example: Creating a new module**
+```bash
+php artisan make:module example
+```
+
+That's it! The module is immediately available with zero additional steps.
+
+### 📁 Original InterNACHI Approach
+
+**Setup Requirements:**
+
+**Main composer.json configuration:**
+```json
+{
+    "repositories" : [
+        {
+            "type" : "path",
+            "url" : "app-modules/*",
+            "options" : {
+                "symlink" : true
+            }
+        }
+    ]
+}
+```
+
+**Example: Creating a new module**
+```bash
+# 1. Create the module
+php artisan make:module example
+
+# 2. Manually add to composer.json require section if not added by the command
+#    "require" : 
+#        {
+#             ....
+#            "modules/example" : "*"
+#        }
+
+
+# 3. Update composer
+composer update modules/example
+```
+
+### Quick Comparison
+
+| Feature | Enhanced Approach | Original Approach                                                                               |
+|---------|------------------|-------------------------------------------------------------------------------------------------|
+| **Initial Setup** | Add merge-plugin config once | Add repositories config once                                                                    |
+| **New Module Creation** | `php artisan make:module name` | `php artisan make:module name` +  composer.json registration for the module + `composer update` |
+| **composer.json Changes** | None after setup | Need to register each module we want to keep in composer.json                           |
+| **Autoloading** | Automatic via merge-plugin | Manual registration required                                                                    |
+
+### Which Approach Should You Use?
+
+- **Choose Enhanced Approach** if you create modules frequently and want minimal friction
+- **Choose Original Approach** if you prefer explicit control over dependencies or have specific composer workflow requirements
+
+Both approaches are fully supported and you can switch between them at any time.
+
 
 ---
 

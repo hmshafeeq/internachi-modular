@@ -59,10 +59,11 @@ class ModularServiceProvider extends ServiceProvider
 		});
 
 		$this->app->singleton(AutodiscoveryHelper::class, function(Application $app) {
+			$cacheFilename = config('app-modules.cache_filename', 'app-modules.php');
 			return new AutodiscoveryHelper(
 				$app->make(FinderFactory::class),
 				$app->make(Filesystem::class),
-				$this->app->bootstrapPath('cache/'.config('app-modules.cache_filename'))
+				$this->app->bootstrapPath('cache/'.$cacheFilename)
 			);
 		});
 

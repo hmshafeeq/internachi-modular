@@ -6,5 +6,5 @@ use Illuminate\Foundation\Console\ChannelMakeCommand;
 
 class MakeChannel extends ChannelMakeCommand
 {
-	use Modularize;
+    use Modularize;
 }

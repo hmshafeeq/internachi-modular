@@ -6,5 +6,5 @@ use Illuminate\Foundation\Console\EventMakeCommand;
 
 class MakeEvent extends EventMakeCommand
 {
-	use Modularize;
+    use Modularize;
 }

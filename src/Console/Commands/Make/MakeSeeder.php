@@ -7,40 +7,41 @@ use Illuminate\Support\Str;
 
 class MakeSeeder extends SeederMakeCommand
 {
-	use Modularize {
-		getPath as getModularPath;
-	}
+    use Modularize {
+        getPath as getModularPath;
+    }
 
-	protected function getPath($name)
-	{
-		if ($module = $this->module()) {
-			$name = Str::replaceFirst($module->qualify('Database\\Seeders\\'), '', $name);
-			return $this->getModularPath($name);
-		}
+    protected function getPath($name)
+    {
+        if ($module = $this->module()) {
+            $name = Str::replaceFirst($module->qualify('Database\\Seeders\\'), '', $name);
 
-		return parent::getPath($name);
-	}
+            return $this->getModularPath($name);
+        }
 
-	protected function replaceNamespace(&$stub, $name)
-	{
-		if ($module = $this->module()) {
-			if (version_compare($this->getLaravel()->version(), '9.6.0', '<')) {
-				$namespace = $module->qualify('Database\Seeders');
-				$stub = str_replace('namespace Database\Seeders;', "namespace {$namespace};", $stub);
-			}
-		}
+        return parent::getPath($name);
+    }
 
-		return parent::replaceNamespace($stub, $name);
-	}
+    protected function replaceNamespace(&$stub, $name)
+    {
+        if ($module = $this->module()) {
+            if (version_compare($this->getLaravel()->version(), '9.6.0', '<')) {
+                $namespace = $module->qualify('Database\Seeders');
+                $stub = str_replace('namespace Database\Seeders;', "namespace {$namespace};", $stub);
+            }
+        }
 
-	protected function rootNamespace()
-	{
-		if ($module = $this->module()) {
-			if (version_compare($this->getLaravel()->version(), '9.6.0', '>=')) {
-				return $module->qualify('Database\Seeders');
-			}
-		}
+        return parent::replaceNamespace($stub, $name);
+    }
 
-		return parent::rootNamespace();
-	}
+    protected function rootNamespace()
+    {
+        if ($module = $this->module()) {
+            if (version_compare($this->getLaravel()->version(), '9.6.0', '>=')) {
+                return $module->qualify('Database\Seeders');
+            }
+        }
+
+        return parent::rootNamespace();
+    }
 }

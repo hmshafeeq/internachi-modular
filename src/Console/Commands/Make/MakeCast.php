@@ -6,5 +6,5 @@ use Illuminate\Foundation\Console\CastMakeCommand;
 
 class MakeCast extends CastMakeCommand
 {
-	use Modularize;
+    use Modularize;
 }

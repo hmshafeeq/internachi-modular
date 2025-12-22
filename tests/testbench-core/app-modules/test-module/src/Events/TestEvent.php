@@ -8,7 +8,7 @@ use Illuminate\Queue\SerializesModels;
 
 class TestEvent
 {
-	use Dispatchable;
-	use InteractsWithSockets;
-	use SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 }

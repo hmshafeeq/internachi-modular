@@ -6,5 +6,5 @@ use Illuminate\Foundation\Console\NotificationMakeCommand;
 
 class MakeNotification extends NotificationMakeCommand
 {
-	use Modularize;
+    use Modularize;
 }

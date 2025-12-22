@@ -8,67 +8,68 @@ use SimpleXMLElement;
 
 abstract class ConfigWriter
 {
-	/**
-	 * @var string
-	 */
-	public $last_error;
+    /**
+     * @var string
+     */
+    public $last_error;
 
-	/**
-	 * @var string
-	 */
-	protected $config_path;
+    /**
+     * @var string
+     */
+    protected $config_path;
 
-	/**
-	 * @var \InterNACHI\Modular\Support\ModuleRegistry
-	 */
-	protected $module_registry;
+    /**
+     * @var \InterNACHI\Modular\Support\ModuleRegistry
+     */
+    protected $module_registry;
 
-	public function __construct($config_path, ModuleRegistry $module_registry)
-	{
-		$this->config_path = $config_path;
-		$this->module_registry = $module_registry;
-	}
+    public function __construct($config_path, ModuleRegistry $module_registry)
+    {
+        $this->config_path = $config_path;
+        $this->module_registry = $module_registry;
+    }
 
-	abstract public function write(): bool;
+    abstract public function write(): bool;
 
-	public function handle(): bool
-	{
-		if (! $this->checkConfigFilePermissions()) {
-			return false;
-		}
+    public function handle(): bool
+    {
+        if (! $this->checkConfigFilePermissions()) {
+            return false;
+        }
 
-		return $this->write();
-	}
+        return $this->write();
+    }
 
-	protected function checkConfigFilePermissions(): bool
-	{
-		if (! is_readable($this->config_path) || ! is_writable($this->config_path)) {
-			return $this->error("Unable to find or read: '{$this->config_path}'");
-		}
+    protected function checkConfigFilePermissions(): bool
+    {
+        if (! is_readable($this->config_path) || ! is_writable($this->config_path)) {
+            return $this->error("Unable to find or read: '{$this->config_path}'");
+        }
 
-		if (! is_writable($this->config_path)) {
-			return $this->error("Config file is not writable: '{$this->config_path}'");
-		}
+        if (! is_writable($this->config_path)) {
+            return $this->error("Config file is not writable: '{$this->config_path}'");
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	protected function error(string $message): bool
-	{
-		$this->last_error = $message;
-		return false;
-	}
+    protected function error(string $message): bool
+    {
+        $this->last_error = $message;
 
-	protected function formatXml(SimpleXMLElement $xml): string
-	{
-		$dom = new DOMDocument('1.0', 'UTF-8');
-		$dom->formatOutput = true;
-		$dom->preserveWhiteSpace = false;
-		$dom->loadXML($xml->asXML());
+        return false;
+    }
 
-		$xml = $dom->saveXML();
-		$xml = preg_replace('~(\S)/>\s*$~m', '$1 />', $xml);
+    protected function formatXml(SimpleXMLElement $xml): string
+    {
+        $dom = new DOMDocument('1.0', 'UTF-8');
+        $dom->formatOutput = true;
+        $dom->preserveWhiteSpace = false;
+        $dom->loadXML($xml->asXML());
 
-		return $xml;
-	}
+        $xml = $dom->saveXML();
+        $xml = preg_replace('~(\S)/>\s*$~m', '$1 />', $xml);
+
+        return $xml;
+    }
 }

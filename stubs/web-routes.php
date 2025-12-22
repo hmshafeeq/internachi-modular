@@ -1,4 +1,3 @@
 <?php
 
-Route::middleware(['web'])->group(function() {
-});
+Route::middleware(['web'])->group(function () {});

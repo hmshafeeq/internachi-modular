@@ -6,5 +6,5 @@ use Illuminate\Foundation\Console\PolicyMakeCommand;
 
 class MakePolicy extends PolicyMakeCommand
 {
-	use Modularize;
+    use Modularize;
 }

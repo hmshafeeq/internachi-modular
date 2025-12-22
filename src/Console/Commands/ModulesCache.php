@@ -7,16 +7,16 @@ use InterNACHI\Modular\Support\AutodiscoveryHelper;
 
 class ModulesCache extends Command
 {
-	protected $signature = 'modules:cache';
+    protected $signature = 'modules:cache';
 
-	protected $description = 'Create a cache file for faster module loading';
+    protected $description = 'Create a cache file for faster module loading';
 
-	public function handle(AutodiscoveryHelper $helper)
-	{
-		$this->call(ModulesClear::class);
+    public function handle(AutodiscoveryHelper $helper)
+    {
+        $this->call(ModulesClear::class);
 
-		$helper->writeCache($this->getLaravel());
+        $helper->writeCache($this->getLaravel());
 
-		$this->info('Modules cached successfully!');
-	}
+        $this->info('Modules cached successfully!');
+    }
 }

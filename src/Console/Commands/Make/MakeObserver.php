@@ -6,5 +6,5 @@ use Illuminate\Foundation\Console\ObserverMakeCommand;
 
 class MakeObserver extends ObserverMakeCommand
 {
-	use Modularize;
+    use Modularize;
 }

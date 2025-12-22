@@ -28,204 +28,205 @@ use Livewire\LivewireManager;
 
 class ModularServiceProvider extends ServiceProvider
 {
-	protected ?ModuleRegistry $registry = null;
+    protected ?ModuleRegistry $registry = null;
 
-	protected ?AutodiscoveryHelper $autodiscovery_helper = null;
+    protected ?AutodiscoveryHelper $autodiscovery_helper = null;
 
-	protected string $base_dir;
+    protected string $base_dir;
 
-	protected ?string $modules_path = null;
+    protected ?string $modules_path = null;
 
-	public function __construct($app)
-	{
-		parent::__construct($app);
+    public function __construct($app)
+    {
+        parent::__construct($app);
 
-		$this->base_dir = str_replace('\\', '/', dirname(__DIR__, 2));
-	}
+        $this->base_dir = str_replace('\\', '/', dirname(__DIR__, 2));
+    }
 
-	public function register(): void
-	{
-		$this->mergeConfigFrom("{$this->base_dir}/config/app-modules.php", 'app-modules');
+    public function register(): void
+    {
+        $this->mergeConfigFrom("{$this->base_dir}/config/app-modules.php", 'app-modules');
 
-		$this->app->singleton(ModuleRegistry::class, function(Application $app) {
-			return new ModuleRegistry(
-				$this->getModulesBasePath(),
-				$app->make(AutodiscoveryHelper::class),
-			);
-		});
+        $this->app->singleton(ModuleRegistry::class, function (Application $app) {
+            return new ModuleRegistry(
+                $this->getModulesBasePath(),
+                $app->make(AutodiscoveryHelper::class),
+            );
+        });
 
-		$this->app->singleton(FinderFactory::class, function() {
-			return new FinderFactory($this->getModulesBasePath());
-		});
+        $this->app->singleton(FinderFactory::class, function () {
+            return new FinderFactory($this->getModulesBasePath());
+        });
 
-		$this->app->singleton(AutodiscoveryHelper::class, function(Application $app) {
-			$cacheFilename = config('app-modules.cache_filename', 'app-modules.php');
-			return new AutodiscoveryHelper(
-				$app->make(FinderFactory::class),
-				$app->make(Filesystem::class),
-				$this->app->bootstrapPath('cache/'.$cacheFilename)
-			);
-		});
+        $this->app->singleton(AutodiscoveryHelper::class, function (Application $app) {
+            $cacheFilename = config('app-modules.cache_filename', 'app-modules.php');
 
-		$this->app->singleton(MakeMigration::class, function(Application $app) {
-			return new MigrateMakeCommand($app['migration.creator'], $app['composer']);
-		});
+            return new AutodiscoveryHelper(
+                $app->make(FinderFactory::class),
+                $app->make(Filesystem::class),
+                $this->app->bootstrapPath('cache/'.$cacheFilename)
+            );
+        });
 
-		$this->app->singleton(\Illuminate\Foundation\PackageManifest::class, fn() => new PackageManifest(
-			new Filesystem(),
-			$this->app->basePath(),
-			$this->app->getCachedPackagesPath()
-		));
+        $this->app->singleton(MakeMigration::class, function (Application $app) {
+            return new MigrateMakeCommand($app['migration.creator'], $app['composer']);
+        });
 
-		$this->registerEloquentFactories();
+        $this->app->singleton(\Illuminate\Foundation\PackageManifest::class, fn () => new PackageManifest(
+            new Filesystem,
+            $this->app->basePath(),
+            $this->app->getCachedPackagesPath()
+        ));
 
-		$this->app->resolving(Migrator::class, fn(Migrator $migrator) => $this->autodiscover()->migrations($migrator));
-		$this->app->resolving(Gate::class, fn(Gate $gate) => $this->autodiscover()->policies($gate));
+        $this->registerEloquentFactories();
 
-		Artisan::starting(function(Artisan $artisan) {
-			$this->autodiscover()->commands($artisan);
-			$this->registerNamespacesInTinker();
-		});
+        $this->app->resolving(Migrator::class, fn (Migrator $migrator) => $this->autodiscover()->migrations($migrator));
+        $this->app->resolving(Gate::class, fn (Gate $gate) => $this->autodiscover()->policies($gate));
 
-		$this->optimizes('modules:cache', 'modules:clear', 'modular');
-	}
+        Artisan::starting(function (Artisan $artisan) {
+            $this->autodiscover()->commands($artisan);
+            $this->registerNamespacesInTinker();
+        });
 
-	public function boot(): void
-	{
-		$this->publishVendorFiles();
-		$this->bootPackageCommands();
+        $this->optimizes('modules:cache', 'modules:clear', 'modular');
+    }
 
-		$this->bootRoutes();
-		$this->bootViews();
-		$this->bootBladeComponents();
-		$this->bootTranslations();
-		$this->bootEvents();
-		$this->bootLivewireComponents();
-	}
+    public function boot(): void
+    {
+        $this->publishVendorFiles();
+        $this->bootPackageCommands();
 
-	protected function registry(): ModuleRegistry
-	{
-		return $this->registry ??= $this->app->make(ModuleRegistry::class);
-	}
+        $this->bootRoutes();
+        $this->bootViews();
+        $this->bootBladeComponents();
+        $this->bootTranslations();
+        $this->bootEvents();
+        $this->bootLivewireComponents();
+    }
 
-	protected function autodiscover(): AutodiscoveryHelper
-	{
-		return $this->autodiscovery_helper ??= $this->app->make(AutodiscoveryHelper::class);
-	}
+    protected function registry(): ModuleRegistry
+    {
+        return $this->registry ??= $this->app->make(ModuleRegistry::class);
+    }
 
-	protected function publishVendorFiles(): void
-	{
-		$this->publishes([
-			"{$this->base_dir}/config/app-modules.php" => $this->app->configPath('app-modules.php'),
-		], 'modular-config');
+    protected function autodiscover(): AutodiscoveryHelper
+    {
+        return $this->autodiscovery_helper ??= $this->app->make(AutodiscoveryHelper::class);
+    }
 
-		$this->publishes([
-			__DIR__.'/../../stubs' => $this->app->basePath('stubs/modular'),
-		], 'modular-stubs');
-	}
+    protected function publishVendorFiles(): void
+    {
+        $this->publishes([
+            "{$this->base_dir}/config/app-modules.php" => $this->app->configPath('app-modules.php'),
+        ], 'modular-config');
 
-	protected function bootPackageCommands(): void
-	{
-		if ($this->app->runningInConsole()) {
-			$this->commands([
-				MakeModule::class,
-				ModulesCache::class,
-				ModulesClear::class,
-				ModulesSync::class,
-				ModulesList::class,
-			]);
-		}
-	}
+        $this->publishes([
+            __DIR__.'/../../stubs' => $this->app->basePath('stubs/modular'),
+        ], 'modular-stubs');
+    }
 
-	protected function bootRoutes(): void
-	{
-		if (! $this->app->routesAreCached()) {
-			$this->autodiscover()->routes();
-		}
-	}
+    protected function bootPackageCommands(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                MakeModule::class,
+                ModulesCache::class,
+                ModulesClear::class,
+                ModulesSync::class,
+                ModulesList::class,
+            ]);
+        }
+    }
 
-	protected function bootViews(): void
-	{
-		$this->callAfterResolving('view', function(ViewFactory $factory) {
-			$this->autodiscover()->views($factory);
-		});
-	}
+    protected function bootRoutes(): void
+    {
+        if (! $this->app->routesAreCached()) {
+            $this->autodiscover()->routes();
+        }
+    }
 
-	protected function bootBladeComponents(): void
-	{
-		$this->callAfterResolving(BladeCompiler::class, function(BladeCompiler $blade) {
-			$this->autodiscover()->blade($blade);
-		});
-	}
+    protected function bootViews(): void
+    {
+        $this->callAfterResolving('view', function (ViewFactory $factory) {
+            $this->autodiscover()->views($factory);
+        });
+    }
 
-	protected function bootTranslations(): void
-	{
-		$this->callAfterResolving('translator', function(TranslatorContract $translator) {
-			if ($translator instanceof Translator) {
-				$this->autodiscover()->translations($translator);
-			}
-		});
-	}
+    protected function bootBladeComponents(): void
+    {
+        $this->callAfterResolving(BladeCompiler::class, function (BladeCompiler $blade) {
+            $this->autodiscover()->blade($blade);
+        });
+    }
 
-	protected function bootEvents(): void
-	{
-		$this->callAfterResolving(Dispatcher::class, function(Dispatcher $events) {
-			$this->autodiscover()->events($events, $this->shouldDiscoverEvents());
-		});
-	}
+    protected function bootTranslations(): void
+    {
+        $this->callAfterResolving('translator', function (TranslatorContract $translator) {
+            if ($translator instanceof Translator) {
+                $this->autodiscover()->translations($translator);
+            }
+        });
+    }
 
-	protected function bootLivewireComponents(): void
-	{
-		if (class_exists(LivewireManager::class)) {
-			$this->autodiscover()->livewire($this->app->make(LivewireManager::class));
-		}
-	}
+    protected function bootEvents(): void
+    {
+        $this->callAfterResolving(Dispatcher::class, function (Dispatcher $events) {
+            $this->autodiscover()->events($events, $this->shouldDiscoverEvents());
+        });
+    }
 
-	protected function registerEloquentFactories(): void
-	{
-		$helper = new DatabaseFactoryHelper($this->registry());
+    protected function bootLivewireComponents(): void
+    {
+        if (class_exists(LivewireManager::class)) {
+            $this->autodiscover()->livewire($this->app->make(LivewireManager::class));
+        }
+    }
 
-		EloquentFactory::guessModelNamesUsing($helper->modelNameResolver());
-		EloquentFactory::guessFactoryNamesUsing($helper->factoryNameResolver());
-	}
+    protected function registerEloquentFactories(): void
+    {
+        $helper = new DatabaseFactoryHelper($this->registry());
 
-	protected function registerNamespacesInTinker(): void
-	{
-		if (! class_exists('Laravel\\Tinker\\TinkerServiceProvider')) {
-			return;
-		}
+        EloquentFactory::guessModelNamesUsing($helper->modelNameResolver());
+        EloquentFactory::guessFactoryNamesUsing($helper->factoryNameResolver());
+    }
 
-		$namespaces = $this->registry()
-			->modules()
-			->flatMap(fn(ModuleConfig $config) => $config->namespaces)
-			->reject(fn($ns) => Str::endsWith($ns, ['Tests\\', 'Database\\Factories\\', 'Database\\Seeders\\']))
-			->values()
-			->all();
+    protected function registerNamespacesInTinker(): void
+    {
+        if (! class_exists('Laravel\\Tinker\\TinkerServiceProvider')) {
+            return;
+        }
 
-		Config::set('tinker.alias', array_merge($namespaces, Config::get('tinker.alias', [])));
-	}
+        $namespaces = $this->registry()
+            ->modules()
+            ->flatMap(fn (ModuleConfig $config) => $config->namespaces)
+            ->reject(fn ($ns) => Str::endsWith($ns, ['Tests\\', 'Database\\Factories\\', 'Database\\Seeders\\']))
+            ->values()
+            ->all();
 
-	protected function getModulesBasePath(): string
-	{
-		if (null === $this->modules_path) {
-			$directory_name = $this->app->make('config')->get('app-modules.modules_directory', 'app-modules');
-			$this->modules_path = str_replace('\\', '/', $this->app->basePath($directory_name));
-		}
+        Config::set('tinker.alias', array_merge($namespaces, Config::get('tinker.alias', [])));
+    }
 
-		return $this->modules_path;
-	}
+    protected function getModulesBasePath(): string
+    {
+        if ($this->modules_path === null) {
+            $directory_name = $this->app->make('config')->get('app-modules.modules_directory', 'app-modules');
+            $this->modules_path = str_replace('\\', '/', $this->app->basePath($directory_name));
+        }
 
-	protected function shouldDiscoverEvents(): bool
-	{
-		return $this->app->make('config')
-			->get('app-modules.should_discover_events') ?? $this->appIsConfiguredToDiscoverEvents();
-	}
+        return $this->modules_path;
+    }
 
-	protected function appIsConfiguredToDiscoverEvents(): bool
-	{
-		return collect($this->app->getProviders(EventServiceProvider::class))
-			->filter(fn(EventServiceProvider $provider) => $provider::class === EventServiceProvider::class
-				|| str_starts_with(get_class($provider), $this->app->getNamespace()))
-			->contains(fn(EventServiceProvider $provider) => $provider->shouldDiscoverEvents());
-	}
+    protected function shouldDiscoverEvents(): bool
+    {
+        return $this->app->make('config')
+            ->get('app-modules.should_discover_events') ?? $this->appIsConfiguredToDiscoverEvents();
+    }
+
+    protected function appIsConfiguredToDiscoverEvents(): bool
+    {
+        return collect($this->app->getProviders(EventServiceProvider::class))
+            ->filter(fn (EventServiceProvider $provider) => $provider::class === EventServiceProvider::class
+                || str_starts_with(get_class($provider), $this->app->getNamespace()))
+            ->contains(fn (EventServiceProvider $provider) => $provider->shouldDiscoverEvents());
+    }
 }

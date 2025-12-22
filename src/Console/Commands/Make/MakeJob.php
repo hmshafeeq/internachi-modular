@@ -6,5 +6,5 @@ use Illuminate\Foundation\Console\JobMakeCommand;
 
 class MakeJob extends JobMakeCommand
 {
-	use Modularize;
+    use Modularize;
 }

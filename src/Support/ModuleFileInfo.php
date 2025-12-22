@@ -9,29 +9,28 @@ use Symfony\Component\Finder\SplFileInfo;
 /** @mixin SplFileInfo */
 class ModuleFileInfo
 {
-	use ForwardsCalls;
+    use ForwardsCalls;
 
-	protected ?ModuleConfig $module = null;
+    protected ?ModuleConfig $module = null;
 
-	public function __construct(
-		protected SplFileInfo $file,
-	) {
-	}
+    public function __construct(
+        protected SplFileInfo $file,
+    ) {}
 
-	public function fullyQualifiedClassName(): string
-	{
-		return $this->module()->pathToFullyQualifiedClassName($this->getPathname());
-	}
+    public function fullyQualifiedClassName(): string
+    {
+        return $this->module()->pathToFullyQualifiedClassName($this->getPathname());
+    }
 
-	public function module(): ModuleConfig
-	{
-		return $this->module ??= Container::getInstance()
-			->make(ModuleRegistry::class)
-			->moduleForPathOrFail($this->getPath());
-	}
+    public function module(): ModuleConfig
+    {
+        return $this->module ??= Container::getInstance()
+            ->make(ModuleRegistry::class)
+            ->moduleForPathOrFail($this->getPath());
+    }
 
-	public function __call(string $name, array $arguments)
-	{
-		return $this->forwardDecoratedCallTo($this->file, $name, $arguments);
-	}
+    public function __call(string $name, array $arguments)
+    {
+        return $this->forwardDecoratedCallTo($this->file, $name, $arguments);
+    }
 }

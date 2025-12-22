@@ -6,5 +6,5 @@ use Illuminate\Foundation\Console\ResourceMakeCommand;
 
 class MakeResource extends ResourceMakeCommand
 {
-	use Modularize;
+    use Modularize;
 }

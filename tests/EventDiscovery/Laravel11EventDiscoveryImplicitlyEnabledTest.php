@@ -12,38 +12,38 @@ use InterNACHI\Modular\Tests\TestCase;
 
 class Laravel11EventDiscoveryImplicitlyEnabledTest extends TestCase
 {
-	use PreloadsAppModules;
+    use PreloadsAppModules;
 
-	protected function setUp(): void
-	{
-		parent::setUp();
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-		$this->beforeApplicationDestroyed(fn() => $this->artisan(ModulesClear::class));
-		$this->requiresLaravelVersion('11.0.0');
-	}
+        $this->beforeApplicationDestroyed(fn () => $this->artisan(ModulesClear::class));
+        $this->requiresLaravelVersion('11.0.0');
+    }
 
-	public function test_it_auto_discovers_event_listeners(): void
-	{
-		$module = Modules::module('test-module');
+    public function test_it_auto_discovers_event_listeners(): void
+    {
+        $module = Modules::module('test-module');
 
-		$this->assertNotEmpty(Event::getListeners($module->qualify('Events\\TestEvent')));
+        $this->assertNotEmpty(Event::getListeners($module->qualify('Events\\TestEvent')));
 
-		// Also check that the events are cached correctly
+        // Also check that the events are cached correctly
 
-		$this->artisan(ModulesCache::class);
+        $this->artisan(ModulesCache::class);
 
-		$cache = require $this->app->bootstrapPath('cache/modular.php');
+        $cache = require $this->app->bootstrapPath('cache/modular.php');
 
-		$this->assertArrayHasKey($module->qualify('Events\\TestEvent'), $cache['events']);
+        $this->assertArrayHasKey($module->qualify('Events\\TestEvent'), $cache['events']);
 
-		$this->assertContains(
-			$module->qualify('Listeners\\TestEventListener').'@handle',
-			$cache['events'][$module->qualify('Events\\TestEvent')]
-		);
-	}
+        $this->assertContains(
+            $module->qualify('Listeners\\TestEventListener').'@handle',
+            $cache['events'][$module->qualify('Events\\TestEvent')]
+        );
+    }
 
-	protected function getPackageProviders($app)
-	{
-		return array_merge([EventServiceProvider::class], parent::getPackageProviders($app));
-	}
+    protected function getPackageProviders($app)
+    {
+        return array_merge([EventServiceProvider::class], parent::getPackageProviders($app));
+    }
 }

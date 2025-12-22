@@ -6,5 +6,5 @@ use Illuminate\Foundation\Console\MailMakeCommand;
 
 class MakeMail extends MailMakeCommand
 {
-	use Modularize;
+    use Modularize;
 }

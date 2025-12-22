@@ -14,148 +14,152 @@ use Symfony\Component\Finder\SplFileInfo;
 
 class ModulesSync extends Command
 {
-	protected $signature = 'modules:sync {--no-phpstorm : Do not update PhpStorm config files}';
+    protected $signature = 'modules:sync {--no-phpstorm : Do not update PhpStorm config files}';
 
-	protected $description = 'Sync your project\'s configuration with your current modules';
+    protected $description = 'Sync your project\'s configuration with your current modules';
 
-	/**
-	 * @var \Illuminate\Filesystem\Filesystem
-	 */
-	protected $filesystem;
+    /**
+     * @var \Illuminate\Filesystem\Filesystem
+     */
+    protected $filesystem;
 
-	/**
-	 * @var \InterNACHI\Modular\Support\ModuleRegistry
-	 */
-	protected $registry;
+    /**
+     * @var \InterNACHI\Modular\Support\ModuleRegistry
+     */
+    protected $registry;
 
-	public function handle(ModuleRegistry $registry, Filesystem $filesystem)
-	{
-		$this->filesystem = $filesystem;
-		$this->registry = $registry;
+    public function handle(ModuleRegistry $registry, Filesystem $filesystem)
+    {
+        $this->filesystem = $filesystem;
+        $this->registry = $registry;
 
-		$this->updatePhpUnit();
+        $this->updatePhpUnit();
 
-		if (true !== $this->option('no-phpstorm')) {
-			$this->updatePhpStormConfig();
-		}
-	}
+        if ($this->option('no-phpstorm') !== true) {
+            $this->updatePhpStormConfig();
+        }
+    }
 
-	protected function updatePhpUnit(): void
-	{
-		$config_path = $this->getLaravel()->basePath('phpunit.xml');
+    protected function updatePhpUnit(): void
+    {
+        $config_path = $this->getLaravel()->basePath('phpunit.xml');
 
-		if (! $this->filesystem->exists($config_path)) {
-			$this->warn('No phpunit.xml file found. Skipping PHPUnit configuration.');
-			return;
-		}
+        if (! $this->filesystem->exists($config_path)) {
+            $this->warn('No phpunit.xml file found. Skipping PHPUnit configuration.');
 
-		$modules_directory = config('app-modules.modules_directory', 'app-modules');
+            return;
+        }
 
-		$config = simplexml_load_string($this->filesystem->get($config_path));
+        $modules_directory = config('app-modules.modules_directory', 'app-modules');
 
-		$existing_nodes = $config->xpath("//phpunit//testsuites//testsuite//directory[text()='./{$modules_directory}/*/tests']");
+        $config = simplexml_load_string($this->filesystem->get($config_path));
 
-		if (count($existing_nodes)) {
-			$this->info('Modules test suite already exists in phpunit.xml');
-			return;
-		}
+        $existing_nodes = $config->xpath("//phpunit//testsuites//testsuite//directory[text()='./{$modules_directory}/*/tests']");
 
-		$testsuites = $config->xpath('//phpunit//testsuites');
-		if (! count($testsuites)) {
-			$this->error('Cannot find <testsuites> node in phpunit.xml file. Skipping PHPUnit configuration.');
-			return;
-		}
+        if (count($existing_nodes)) {
+            $this->info('Modules test suite already exists in phpunit.xml');
 
-		$testsuite = $testsuites[0]->addChild('testsuite');
-		$testsuite->addAttribute('name', 'Modules');
+            return;
+        }
 
-		$directory = $testsuite->addChild('directory');
-		$directory->addAttribute('suffix', 'Test.php');
-		$directory[0] = "./{$modules_directory}/*/tests";
+        $testsuites = $config->xpath('//phpunit//testsuites');
+        if (! count($testsuites)) {
+            $this->error('Cannot find <testsuites> node in phpunit.xml file. Skipping PHPUnit configuration.');
 
-		$this->filesystem->put($config_path, $config->asXML());
-		$this->info('Added "Modules" PHPUnit test suite.');
-	}
+            return;
+        }
 
-	protected function updatePhpStormConfig(): void
-	{
-		$this->updatePhpStormLaravelPlugin();
-		$this->updatePhpStormPhpConfig();
-		$this->updatePhpStormWorkspaceConfig();
-		$this->updatePhpStormProjectIml();
-	}
+        $testsuite = $testsuites[0]->addChild('testsuite');
+        $testsuite->addAttribute('name', 'Modules');
 
-	protected function updatePhpStormLaravelPlugin(): void
-	{
-		$config_path = $this->getLaravel()->basePath('.idea/laravel-plugin.xml');
-		$writer = new LaravelConfigWriter($config_path, $this->registry);
+        $directory = $testsuite->addChild('directory');
+        $directory->addAttribute('suffix', 'Test.php');
+        $directory[0] = "./{$modules_directory}/*/tests";
 
-		if ($writer->handle()) {
-			$this->info('Updated PhpStorm/Laravel Plugin config file...');
-		} else {
-			$this->info('Did not find/update PhpStorm/Laravel Plugin config.');
-			if ($this->getOutput()->isVerbose()) {
-				$this->warn($writer->last_error);
-			}
-		}
-	}
+        $this->filesystem->put($config_path, $config->asXML());
+        $this->info('Added "Modules" PHPUnit test suite.');
+    }
 
-	protected function updatePhpStormPhpConfig(): void
-	{
-		$config_path = $this->getLaravel()->basePath('.idea/php.xml');
-		$writer = new PhpFrameworkWriter($config_path, $this->registry);
+    protected function updatePhpStormConfig(): void
+    {
+        $this->updatePhpStormLaravelPlugin();
+        $this->updatePhpStormPhpConfig();
+        $this->updatePhpStormWorkspaceConfig();
+        $this->updatePhpStormProjectIml();
+    }
 
-		if ($writer->handle()) {
-			$this->info('Updated PhpStorm PHP config file...');
-		} else {
-			$this->info('Did not find/update PhpStorm PHP config.');
-			if ($this->getOutput()->isVerbose()) {
-				$this->warn($writer->last_error);
-			}
-		}
-	}
+    protected function updatePhpStormLaravelPlugin(): void
+    {
+        $config_path = $this->getLaravel()->basePath('.idea/laravel-plugin.xml');
+        $writer = new LaravelConfigWriter($config_path, $this->registry);
 
-	protected function updatePhpStormWorkspaceConfig(): void
-	{
-		$config_path = $this->getLaravel()->basePath('.idea/workspace.xml');
-		$writer = new WorkspaceWriter($config_path, $this->registry);
+        if ($writer->handle()) {
+            $this->info('Updated PhpStorm/Laravel Plugin config file...');
+        } else {
+            $this->info('Did not find/update PhpStorm/Laravel Plugin config.');
+            if ($this->getOutput()->isVerbose()) {
+                $this->warn($writer->last_error);
+            }
+        }
+    }
 
-		if ($writer->handle()) {
-			$this->info('Updated PhpStorm workspace library roots...');
-		} else {
-			$this->info('Did not find/update PhpStorm workspace config.');
-			if ($this->getOutput()->isVerbose()) {
-				$this->warn($writer->last_error);
-			}
-		}
-	}
+    protected function updatePhpStormPhpConfig(): void
+    {
+        $config_path = $this->getLaravel()->basePath('.idea/php.xml');
+        $writer = new PhpFrameworkWriter($config_path, $this->registry);
 
-	protected function updatePhpStormProjectIml(): void
-	{
-		$idea_directory = $this->getLaravel()->basePath('.idea/');
-		if (! $this->filesystem->isDirectory($idea_directory)) {
-			return;
-		}
+        if ($writer->handle()) {
+            $this->info('Updated PhpStorm PHP config file...');
+        } else {
+            $this->info('Did not find/update PhpStorm PHP config.');
+            if ($this->getOutput()->isVerbose()) {
+                $this->warn($writer->last_error);
+            }
+        }
+    }
 
-		FinderCollection::forFiles()
-			->in($idea_directory)
-			->name('*.iml')
-			->first(function(SplFileInfo $file) {
-				$config_path = $file->getPathname();
-				$writer = new ProjectImlWriter($config_path, $this->registry);
+    protected function updatePhpStormWorkspaceConfig(): void
+    {
+        $config_path = $this->getLaravel()->basePath('.idea/workspace.xml');
+        $writer = new WorkspaceWriter($config_path, $this->registry);
 
-				if ($writer->handle()) {
-					$this->info("Updated PhpStorm project source folders in '{$file->getBasename()}'");
-					return true;
-				}
+        if ($writer->handle()) {
+            $this->info('Updated PhpStorm workspace library roots...');
+        } else {
+            $this->info('Did not find/update PhpStorm workspace config.');
+            if ($this->getOutput()->isVerbose()) {
+                $this->warn($writer->last_error);
+            }
+        }
+    }
 
-				$this->info("Could not update PhpStorm project source folders in '{$file->getBasename()}'");
+    protected function updatePhpStormProjectIml(): void
+    {
+        $idea_directory = $this->getLaravel()->basePath('.idea/');
+        if (! $this->filesystem->isDirectory($idea_directory)) {
+            return;
+        }
 
-				if ($this->getOutput()->isVerbose()) {
-					$this->warn($writer->last_error);
-				}
+        FinderCollection::forFiles()
+            ->in($idea_directory)
+            ->name('*.iml')
+            ->first(function (SplFileInfo $file) {
+                $config_path = $file->getPathname();
+                $writer = new ProjectImlWriter($config_path, $this->registry);
 
-				return false;
-			});
-	}
+                if ($writer->handle()) {
+                    $this->info("Updated PhpStorm project source folders in '{$file->getBasename()}'");
+
+                    return true;
+                }
+
+                $this->info("Could not update PhpStorm project source folders in '{$file->getBasename()}'");
+
+                if ($this->getOutput()->isVerbose()) {
+                    $this->warn($writer->last_error);
+                }
+
+                return false;
+            });
+    }
 }

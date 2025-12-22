@@ -10,82 +10,83 @@ use Symfony\Component\Finder\SplFileInfo;
 
 class ModuleConfig implements Arrayable
 {
-	public static function fromComposerFile(SplFileInfo $composer_file): self
-	{
-		$composer_config = json_decode($composer_file->getContents(), true, 16, JSON_THROW_ON_ERROR);
+    public static function fromComposerFile(SplFileInfo $composer_file): self
+    {
+        $composer_config = json_decode($composer_file->getContents(), true, 16, JSON_THROW_ON_ERROR);
 
-		$base_path = rtrim(str_replace('\\', '/', $composer_file->getPath()), '/');
+        $base_path = rtrim(str_replace('\\', '/', $composer_file->getPath()), '/');
 
-		$name = basename($base_path);
+        $name = basename($base_path);
 
-		$namespaces = Collection::make($composer_config['autoload']['psr-4'] ?? [])
-			->mapWithKeys(function($src, $namespace) use ($base_path) {
-				$path = $base_path.'/'.$src;
-				return [$path => $namespace];
-			});
+        $namespaces = Collection::make($composer_config['autoload']['psr-4'] ?? [])
+            ->mapWithKeys(function ($src, $namespace) use ($base_path) {
+                $path = $base_path.'/'.$src;
 
-		return new static($name, $base_path, $namespaces);
-	}
+                return [$path => $namespace];
+            });
 
-	public function __construct(
-		public string $name,
-		public string $base_path,
-		public Collection $namespaces = new Collection(),
-	) {
-	}
+        return new static($name, $base_path, $namespaces);
+    }
 
-	public function path(string $to = ''): string
-	{
-		return rtrim($this->base_path.'/'.$to, '/');
-	}
+    public function __construct(
+        public string $name,
+        public string $base_path,
+        public Collection $namespaces = new Collection,
+    ) {}
 
-	public function namespace(): string
-	{
-		return $this->namespaces->first();
-	}
+    public function path(string $to = ''): string
+    {
+        return rtrim($this->base_path.'/'.$to, '/');
+    }
 
-	public function qualify(string $class_name): string
-	{
-		return $this->namespace().ltrim($class_name, '\\');
-	}
+    public function namespace(): string
+    {
+        return $this->namespaces->first();
+    }
 
-	public function pathToFullyQualifiedClassName(string $path): string
-	{
-		// Handle Windows-style paths
-		$path = str_replace('\\', '/', $path);
+    public function qualify(string $class_name): string
+    {
+        return $this->namespace().ltrim($class_name, '\\');
+    }
 
-		foreach ($this->namespaces as $namespace_path => $namespace) {
-			if (str_starts_with($path, $namespace_path)) {
-				$relative_path = Str::after($path, $namespace_path);
-				return $namespace.$this->formatPathAsNamespace($relative_path);
-			}
-		}
+    public function pathToFullyQualifiedClassName(string $path): string
+    {
+        // Handle Windows-style paths
+        $path = str_replace('\\', '/', $path);
 
-		throw new RuntimeException("Unable to infer qualified class name for '{$path}'");
-	}
+        foreach ($this->namespaces as $namespace_path => $namespace) {
+            if (str_starts_with($path, $namespace_path)) {
+                $relative_path = Str::after($path, $namespace_path);
 
-	public function toArray(): array
-	{
-		return [
-			'name' => $this->name,
-			'base_path' => $this->base_path,
-			'namespaces' => $this->namespaces->toArray(),
-		];
-	}
+                return $namespace.$this->formatPathAsNamespace($relative_path);
+            }
+        }
 
-	protected function formatPathAsNamespace(string $path): string
-	{
-		$path = trim($path, '/');
+        throw new RuntimeException("Unable to infer qualified class name for '{$path}'");
+    }
 
-		$replacements = [
-			'/' => '\\',
-			'.php' => '',
-		];
+    public function toArray(): array
+    {
+        return [
+            'name' => $this->name,
+            'base_path' => $this->base_path,
+            'namespaces' => $this->namespaces->toArray(),
+        ];
+    }
 
-		return str_replace(
-			array_keys($replacements),
-			array_values($replacements),
-			$path
-		);
-	}
+    protected function formatPathAsNamespace(string $path): string
+    {
+        $path = trim($path, '/');
+
+        $replacements = [
+            '/' => '\\',
+            '.php' => '',
+        ];
+
+        return str_replace(
+            array_keys($replacements),
+            array_values($replacements),
+            $path
+        );
+    }
 }

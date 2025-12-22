@@ -9,18 +9,18 @@ use InterNACHI\Modular\Tests\TestCase;
 
 class ModulesClearTest extends TestCase
 {
-	use WritesToAppFilesystem;
+    use WritesToAppFilesystem;
 
-	public function test_it_writes_to_cache_file(): void
-	{
-		$this->artisan(ModulesCache::class);
+    public function test_it_writes_to_cache_file(): void
+    {
+        $this->artisan(ModulesCache::class);
 
-		$expected_path = $this->getApplicationBasePath().$this->normalizeDirectorySeparators('bootstrap/cache/modular.php');
+        $expected_path = $this->getApplicationBasePath().$this->normalizeDirectorySeparators('bootstrap/cache/modular.php');
 
-		$this->assertFileExists($expected_path);
+        $this->assertFileExists($expected_path);
 
-		$this->artisan(ModulesClear::class);
+        $this->artisan(ModulesClear::class);
 
-		$this->assertFileDoesNotExist($expected_path);
-	}
+        $this->assertFileDoesNotExist($expected_path);
+    }
 }

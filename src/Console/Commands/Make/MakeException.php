@@ -6,5 +6,5 @@ use Illuminate\Foundation\Console\ExceptionMakeCommand;
 
 class MakeException extends ExceptionMakeCommand
 {
-	use Modularize;
+    use Modularize;
 }

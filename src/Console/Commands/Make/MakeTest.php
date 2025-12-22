@@ -7,26 +7,27 @@ use Illuminate\Support\Str;
 
 class MakeTest extends TestMakeCommand
 {
-	use Modularize {
-		getPath as getModularPath;
-	}
+    use Modularize {
+        getPath as getModularPath;
+    }
 
-	protected function getPath($name)
-	{
-		if ($module = $this->module()) {
-			$name = '\\'.Str::replaceFirst($module->namespaces->first(), '', $name);
-			return $this->getModularPath($name);
-		}
+    protected function getPath($name)
+    {
+        if ($module = $this->module()) {
+            $name = '\\'.Str::replaceFirst($module->namespaces->first(), '', $name);
 
-		return parent::getPath($name);
-	}
+            return $this->getModularPath($name);
+        }
 
-	protected function rootNamespace()
-	{
-		if ($module = $this->module()) {
-			return $module->namespaces->first().'Tests';
-		}
+        return parent::getPath($name);
+    }
 
-		return 'Tests';
-	}
+    protected function rootNamespace()
+    {
+        if ($module = $this->module()) {
+            return $module->namespaces->first().'Tests';
+        }
+
+        return 'Tests';
+    }
 }

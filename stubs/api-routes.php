@@ -1,4 +1,3 @@
 <?php
 
-Route::middleware(['api'])->group(function() {
-});
+Route::middleware(['api'])->group(function () {});
